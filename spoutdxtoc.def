@@ -1,0 +1,9 @@
+LIBRARY SPOUTDXTOC.DLL
+EXPORTS  
+    SpoutDXToCNew
+    SpoutDXToCFree
+    SpoutDXToCGetSenderCount
+    SpoutDXToCGetSender
+    SpoutDXToCGetSenderListSimple
+    SpoutDXToCNamelistClear
+    SpoutDXToCGetSenderList
