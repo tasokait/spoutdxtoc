@@ -227,7 +227,7 @@ bool __stdcall SpoutDXToCIsConnected(SPOUTDXTOC_RECEIVER *self) {
     return true;
 }
 
-static bool InitDXTexture(SPOUTDXTOC_RECEIVER *self, uint32_t shareHandle) {
+static bool InitDXTexture(SPOUTDXTOC_RECEIVER *self, uintptr_t shareHandle) {
     IDXGIAdapter *pAdapter = nullptr;
 
     SpoutLogNotice("InitDXTexture %x", shareHandle);
@@ -247,7 +247,7 @@ static bool InitDXTexture(SPOUTDXTOC_RECEIVER *self, uint32_t shareHandle) {
         // Try to open the share handle with the same device
         if (self->dx.OpenDX11shareHandle(self->dx.GetDX11Device(),
                                          &self->sharedTexture,
-                                         LongToHandle((long)shareHandle)))
+                                         (HANDLE)shareHandle))
             return true;
 
         SpoutLogNotice("Import failed");
@@ -271,7 +271,7 @@ static bool InitDXTexture(SPOUTDXTOC_RECEIVER *self, uint32_t shareHandle) {
         // Try to open the share handle with the device created from the adapter
         if (self->dx.OpenDX11shareHandle(self->dx.GetDX11Device(),
                                          &self->sharedTexture,
-                                         LongToHandle((long)shareHandle))) {
+                                         (HANDLE)shareHandle)) {
             self->lastAdapterId = i;
             self->dx_open = true;
             SpoutLogNotice("Texture import succeeded");
@@ -295,7 +295,7 @@ bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self,
     if (!self->sendernames.getSharedInfo(self->sendername.c_str(), &sinfo))
         return false;
 
-    info->shareHandle = (HANDLE)(LongToHandle((long)sinfo.shareHandle));
+    info->shareHandle = sinfo.shareHandle;
     info->width = sinfo.width;
     info->height = sinfo.height;
     info->format = sinfo.format;
@@ -323,14 +323,14 @@ bool SpoutDXToCUpdateDXTexture(SPOUTDXTOC_RECEIVER *self,
 
     self->lastShareHandle = 0;
     self->texture_locked = false;
-    bool success = InitDXTexture(self, HandleToLong(info->shareHandle));
+    bool success = InitDXTexture(self, info->shareHandle);
 
     LeaveCriticalSection(&self->cs);
 
     if (!success)
         return false;
 
-    self->lastShareHandle = HandleToLong(info->shareHandle);
+    self->lastShareHandle = info->shareHandle;
     info->adapterId = self->lastAdapterId;
 
     return true;
