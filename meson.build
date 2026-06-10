@@ -40,8 +40,6 @@ spoutdx_src = [
   'Spout2/SPOUTSDK/SpoutGL/SpoutSenderNames.cpp',
   'Spout2/SPOUTSDK/SpoutGL/SpoutSharedMemory.cpp',
   'Spout2/SPOUTSDK/SpoutGL/SpoutUtils.cpp',
-
-  'Spout2/SPOUTSDK/SpoutDirectX/SpoutDX/SpoutDX.cpp',
 ]
 
 spoutdx_deps = [
@@ -61,21 +59,25 @@ spout_dx = static_library(
     '-w', # Ignore all warnings
   ],
   link_args: link_args,
-  install: false,
 )
 
-install_headers ('spoutdxtoc.h')
-
-shared_library(
+spoutdxtoc_dll = shared_library(
   'spoutdxtoc',
   'spoutdxtoc.cpp',
   name_prefix: '',
   include_directories: spoutdx_include_dir,
   c_args: compiler_args,
-  cpp_args: compiler_args,
+  cpp_args: [
+    compiler_args,
+    '-Wno-unknown-pragmas',
+  ],
   vs_module_defs: 'spoutdxtoc.def',
   link_args: link_args,
   link_with: spout_dx,
   dependencies: spoutdx_deps,
-  install: true,
+)
+
+spoutdxtoc_dep = declare_dependency(
+  link_with : spoutdxtoc_dll,
+  include_directories : '.',
 )
