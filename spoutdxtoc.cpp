@@ -307,7 +307,7 @@ bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self,
         // SpoutDXToCUpdateDXTexture() to work around a race
         EnterCriticalSection(&self->cs);
         self->texture_locked = false;
-        InitDXTexture(self, 0);
+        InitDXTexture(self, info->shareHandle);
         LeaveCriticalSection(&self->cs);
         self->lastShareHandle = 0;
         info->changed = true;
