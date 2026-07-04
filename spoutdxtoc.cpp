@@ -286,8 +286,7 @@ static bool InitDXTexture(SPOUTDXTOC_RECEIVER *self, uintptr_t shareHandle) {
     return false;
 }
 
-bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self,
-                                       SPOUTDXTOC_SENDERINFO *info) {
+bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self, SPOUTDXTOC_SENDERINFO *info, int *changexpect) {
     assert(self != NULL);
     assert(info != NULL);
 
@@ -302,7 +301,7 @@ bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self,
     info->usage = sinfo.usage;
     info->changed = false;
 
-    if (self->lastShareHandle != sinfo.shareHandle) {
+    if (!(*changexpect) && (self->lastShareHandle != sinfo.shareHandle)) {
         // Just free the existing texture, defer creating the new one to
         // SpoutDXToCUpdateDXTexture() to work around a race
         EnterCriticalSection(&self->cs);
@@ -311,8 +310,10 @@ bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self,
         LeaveCriticalSection(&self->cs);
         self->lastShareHandle = 0;
         info->changed = true;
+    }else if (*changexpect) {
+        self->lastShareHandle = sinfo.shareHandle;
+        *changexpect = 0;
     }
-
     return true;
 }
 
@@ -374,4 +375,13 @@ bool __stdcall SpoutDXToCGetFrameCount(SPOUTDXTOC_RECEIVER *self,
         *framecount = self->frame.GetSenderFrame();
 
     return ret;
+}
+
+int __stdcall SpoutDXToCGetMetaData(SPOUTDXTOC_RECEIVER *self, D3D11_TEXTURE2D_DESC1 *metadata){
+    assert(self != NULL);
+    ID3D11Texture2D1 *sharedTexture1;
+    self->sharedTexture->QueryInterface(__uuidof(ID3D11Texture2D1), (void**)&sharedTexture1);
+    sharedTexture1->GetDesc1(metadata);
+    sharedTexture1->Release();
+    return 0;
 }
