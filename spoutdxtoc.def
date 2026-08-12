@@ -1,6 +1,7 @@
 LIBRARY SPOUTDXTOC.DLL
 EXPORTS  
     SpoutDXToCNewSenderNames
+    SpoutDXToCAddReceiver
     SpoutDXToCFreeSenderNames
     SpoutDXToCGetSenderCount
     SpoutDXToCGetSender
@@ -16,3 +17,5 @@ EXPORTS
     SpoutDXToCAllowTextureAccess
     SpoutDXToCGetFrameCount
     SpoutDXToCGetMetaData
+    SpoutDXToCAddSender
+    SpoutDXToCFreeSender

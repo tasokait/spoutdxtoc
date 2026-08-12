@@ -40,6 +40,7 @@ spoutdx_src = [
   'Spout2/SPOUTSDK/SpoutGL/SpoutSenderNames.cpp',
   'Spout2/SPOUTSDK/SpoutGL/SpoutSharedMemory.cpp',
   'Spout2/SPOUTSDK/SpoutGL/SpoutUtils.cpp',
+  'Spout2/SPOUTSDK/SpoutDirectX/SpoutDX/SpoutDX.cpp',
 ]
 
 spoutdx_deps = [

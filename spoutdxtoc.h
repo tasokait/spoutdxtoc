@@ -12,6 +12,7 @@ extern "C" {
 
     typedef struct SpoutDXToCSenderNames SPOUTDXTOC_SENDERNAMES;
     typedef struct SpoutDXToCReceiver SPOUTDXTOC_RECEIVER;
+    typedef struct SpoutDXToCSender SPOUTDXTOC_SENDER;
 
     typedef struct {
         char **list;
@@ -52,6 +53,7 @@ extern "C" {
                                  SPOUTDXTOC_NAMELIST *ret_removed);
 
     SPOUTDXTOC_RECEIVER *SpoutDXToCNewReceiver(const char *SenderName);
+    SPOUTDXTOC_RECEIVER *SpoutDXToCAddReceiver(SPOUTDXTOC_RECEIVER *self ,const char *SenderName);
     void SpoutDXToCFreeReceiver(SPOUTDXTOC_RECEIVER *self);
     bool SpoutDXToCIsConnected(SPOUTDXTOC_RECEIVER *self);
     bool SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self, SPOUTDXTOC_SENDERINFO *info, int *changexpect);
@@ -62,6 +64,9 @@ extern "C" {
     bool SpoutDXToCGetFrameCount(SPOUTDXTOC_RECEIVER *self, uint64_t *framecount);
 
     int SpoutDXToCGetMetaData(SPOUTDXTOC_RECEIVER *self, D3D11_TEXTURE2D_DESC1* metadata);
+
+    SPOUTDXTOC_SENDER* SpoutDXToCAddSender(const char* name, unsigned int width, unsigned int height, DXGI_FORMAT format,SPOUTDXTOC_SENDERNAMES* sendernames, uintptr_t* handle);
+    int SpoutDXToCFreeSender(SPOUTDXTOC_SENDER *alt_self, SPOUTDXTOC_SENDERNAMES* sendernames, const char* name);
 
     #ifdef __cplusplus
 }

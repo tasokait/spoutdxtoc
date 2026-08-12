@@ -35,6 +35,13 @@ struct SpoutDXToCReceiver {
     bool texture_locked;
     bool dx_open;
 };
+struct SpoutDXToCSender {
+    uintptr_t pipewire;
+    spoutDirectX dx;
+    ID3D11Texture2D *sharedTexture;
+    spoutFrameCount frame;
+    CRITICAL_SECTION cs;
+};
 
 SPOUTDXTOC_SENDERNAMES *__stdcall SpoutDXToCNewSenderNames(void) {
     spoututils::EnableSpoutLogFile("C:\\spoutlog.txt");
@@ -194,7 +201,18 @@ SPOUTDXTOC_RECEIVER *__stdcall SpoutDXToCNewReceiver(const char *SenderName) {
     p->frame.EnableFrameCount(SenderName);
     return p;
 }
+SPOUTDXTOC_RECEIVER *__stdcall SpoutDXToCAddReceiver(SPOUTDXTOC_RECEIVER *self ,const char *SenderName) {
+    assert(self != NULL);
+    SPOUTDXTOC_RECEIVER *p = new SpoutDXToCReceiver();
 
+    InitializeCriticalSection(&p->cs);
+
+    p->sendername = std::string(SenderName);
+    p->frame.CreateAccessMutex(SenderName);
+    p->frame.EnableFrameCount(SenderName);
+    p->dx.OpenDirectX11(self->dx.GetDX11Device());
+    return p;
+}
 void __stdcall SpoutDXToCFreeReceiver(SPOUTDXTOC_RECEIVER *self) {
     assert(self != NULL);
 
@@ -212,6 +230,24 @@ void __stdcall SpoutDXToCFreeReceiver(SPOUTDXTOC_RECEIVER *self) {
     DeleteCriticalSection(&self->cs);
 
     delete self;
+}
+
+int __stdcall SpoutDXToCFreeSender(SPOUTDXTOC_SENDER *alt_self, SPOUTDXTOC_SENDERNAMES* sendernames, const char* name) {
+    assert(alt_self != NULL);
+
+    if (alt_self->sharedTexture) {
+        alt_self->sharedTexture->Release();
+        alt_self->sharedTexture = nullptr;
+    }
+
+    //alt_self->dx.;
+    sendernames->sendernames.ReleaseSenderName(name);
+    alt_self->dx.CloseDirectX11();
+
+    DeleteCriticalSection(&alt_self->cs);
+
+    delete alt_self;
+    return 0;
 }
 
 bool __stdcall SpoutDXToCIsConnected(SPOUTDXTOC_RECEIVER *self) {
@@ -312,7 +348,7 @@ bool __stdcall SpoutDXToCGetSenderInfo(SPOUTDXTOC_RECEIVER *self, SPOUTDXTOC_SEN
         info->changed = true;
     }else if (*changexpect) {
         self->lastShareHandle = sinfo.shareHandle;
-        *changexpect = 0;
+        (*changexpect)--;
     }
     return true;
 }
@@ -375,6 +411,38 @@ bool __stdcall SpoutDXToCGetFrameCount(SPOUTDXTOC_RECEIVER *self,
         *framecount = self->frame.GetSenderFrame();
 
     return ret;
+}
+
+SPOUTDXTOC_SENDER* __stdcall SpoutDXToCAddSender(const char* name, unsigned int width, unsigned int height, DXGI_FORMAT format,SPOUTDXTOC_SENDERNAMES* sendernames, uintptr_t* handle){
+    //assert(self != NULL);
+    SpoutDXToCSender *p = new SpoutDXToCSender();
+    InitializeCriticalSection(&p->cs);
+
+    //p->dx.OpenDirectX11(self->dx.GetDX11Device());
+    IDXGIAdapter *pAdapter = nullptr;
+    const int nAdapters = p->dx.GetNumAdapters();
+    for (int i = 0; i < nAdapters; i++) {
+        SpoutLogNotice("Trying adapter %d", i);
+        if (!p->dx.SetAdapter(i))
+            continue;
+
+        // Set the adapter pointer for CreateDX11device to use temporarily
+        p->dx.SetAdapterPointer(pAdapter);
+        if (!p->dx.OpenDirectX11(nullptr)){
+            continue;
+        }else{
+            break;
+        }
+    }
+    p->dx.CreateDX11device();
+    ID3D11Texture2D* pSharedTex = nullptr;
+    HANDLE share;
+    p->dx.CreateSharedDX11Texture(p->dx.GetDX11Device(), width, height, format, &pSharedTex, share);
+    p->pipewire = (uintptr_t)share;
+    *handle = p->pipewire;
+    sendernames->sendernames.CreateSender(const_cast<char*>(name), width, height, (HANDLE)p->pipewire, (DWORD)format);
+    p->frame.EnableFrameCount(name);
+    return p;
 }
 
 int __stdcall SpoutDXToCGetMetaData(SPOUTDXTOC_RECEIVER *self, D3D11_TEXTURE2D_DESC1 *metadata){
