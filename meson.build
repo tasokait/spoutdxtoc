@@ -4,6 +4,7 @@ project(
   default_options: [ 'cpp_std=c++11', 'warning_level=2' ]
 )
 
+static = get_option('static')
 if target_machine.system() != 'windows'
   error('Windows-only library')
 endif
@@ -48,6 +49,7 @@ spoutdx_deps = [
   cpp.find_library('d3d11'),
   cpp.find_library('version'),
   cpp.find_library('winmm'),
+  cpp.find_library('comctl32'),
 ]
 
 # Isolate SpoutDX warnings by building it as a static library
@@ -61,24 +63,40 @@ spout_dx = static_library(
   ],
   link_args: link_args,
 )
-
-spoutdxtoc_dll = shared_library(
-  'spoutdxtoc',
-  'spoutdxtoc.cpp',
-  name_prefix: '',
-  include_directories: spoutdx_include_dir,
-  c_args: compiler_args,
-  cpp_args: [
-    compiler_args,
-    '-Wno-unknown-pragmas',
-  ],
-  vs_module_defs: 'spoutdxtoc.def',
-  link_args: link_args,
-  link_with: spout_dx,
-  dependencies: spoutdx_deps,
-)
+if static
+    spoutdxtoc_lib = static_library(
+        'spoutdxtoc',
+        'spoutdxtoc.cpp',
+        include_directories: spoutdx_include_dir,
+        c_args: compiler_args,
+        cpp_args: [
+            compiler_args,
+            '-Wno-unknown-pragmas',
+        ],
+        link_with: spout_dx,
+        dependencies: spoutdx_deps,
+    )
+else
+    spoutdxtoc_dll = shared_library(
+        'spoutdxtoc',
+        'spoutdxtoc.cpp',
+        name_prefix: '',
+        include_directories: spoutdx_include_dir,
+        c_args: compiler_args,
+        cpp_args: [
+            compiler_args,
+            '-Wno-unknown-pragmas',
+        ],
+        vs_module_defs: 'spoutdxtoc.def',
+        link_args: link_args,
+        link_with: spout_dx,
+        dependencies: spoutdx_deps,
+    )
+endif
 
 spoutdxtoc_dep = declare_dependency(
-  link_with : spoutdxtoc_dll,
+  link_with : static ? spoutdxtoc_lib : spoutdxtoc_dll,
+  dependencies: static ? spoutdx_deps : [],
+  link_args: static ? link_args : [],
   include_directories : '.',
 )

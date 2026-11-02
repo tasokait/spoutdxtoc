@@ -1,0 +1,4 @@
+option('static',
+  type: 'boolean',
+  value: false,
+  description: 'Statically link spoutdxtoc into spout2pw.exe')
